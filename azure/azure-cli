@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+
+AZ_PATH=$HOME
+AZ_CONTAINER_NAME=azure-cli
+AZ_IMAGE_TAG=azure-cli
+
+az() {
+  docker exec -it $AZ_CONTAINER_NAME az "${@}"
+}
+
+az_start() {
+  mkdir -p $AZ_PATH
+  docker run \
+    -d \
+    -it \
+    --name $AZ_CONTAINER_NAME \
+    -v ${AZ_PATH}:/root \
+      azuresdk/azure-cli-python:$AZ_IMAGE_TAG \
+      "cat"
+}
+
+az_update() {
+  az_install latest
+}
+
+az_install() {
+  version=${1:-latest}
+  docker rm -f $AZ_CONTAINER_NAME
+  docker pull azuresdk/azure-cli-python:$version
+  docker tag azuresdk/azure-cli-python:$version azuresdk/azure-cli-python:$AZ_IMAGE_TAG
+  docker rmi azuresdk/azure-cli-python:$version
+  az_start
+}
+
+az_restart() {
+  docker rm -f $AZ_CONTAINER_NAME
+  az_start
+}
+
+az_uninstall() {
+  docker rm -f $AZ_CONTAINER_NAME
+  docker rmi azuresdk/azure-cli-python:$AZ_IMAGE_TAG
+}
